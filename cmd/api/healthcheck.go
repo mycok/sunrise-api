@@ -10,3 +10,4 @@ func (app *application) healthcheckHandler(wr http.ResponseWriter, r *http.Reque
 	fmt.Fprintf(wr, "environment: %s\n", app.config.env)
 	fmt.Fprintf(wr, "version: %s\n", version)
 }
+
