@@ -77,7 +77,7 @@ func (app *application) readJSON(wr http.ResponseWriter, r *http.Request, dest i
 			return fmt.Errorf("body must not be larger than %d bytes", maxBytes)
 		case errors.As(err, &invalidUnmarshalError):
 			panic(err)
-		
+
 		default:
 			return err
 		}
