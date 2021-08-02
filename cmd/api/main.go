@@ -10,6 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/mycok/sunrise-api/internal/data"
+
 	_ "github.com/lib/pq"
 )
 
@@ -20,10 +22,10 @@ type config struct {
 	port int
 	env  string
 	db   struct {
-		dsn string
+		dsn          string
 		maxOpenConns int
 		maxIdleConns int
-		maxIdleTime string
+		maxIdleTime  string
 	}
 }
 
@@ -31,6 +33,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 func openDB(cfg config) (*sql.DB, error) {
@@ -92,6 +95,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: data.New(db),
 	}
 
 	srv := &http.Server{
