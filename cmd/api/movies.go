@@ -1,9 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/mycok/sunrise-api/internal/data"
 	"github.com/mycok/sunrise-api/internal/validator"
@@ -70,13 +70,16 @@ func (app *application) showMovieHandler(wr http.ResponseWriter, r *http.Request
 		return
 	}
 
-	movie := data.Movie{
-		ID:        id,
-		CreatedAt: time.Now(),
-		Title:     "so damn funny",
-		Runtime:   102,
-		Genres:    []string{"comedy", "drama", "sci-fi"},
-		Version:   1,
+	movie, err := app.models.Movies.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(wr, r)
+		default:
+			app.serverErrorResponse(wr, r, err)
+		}
+
+		return
 	}
 
 	err = app.writeJSON(wr, http.StatusOK, envelope{"movie": movie}, nil)
