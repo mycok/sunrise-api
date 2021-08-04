@@ -90,7 +90,7 @@ func (app *application) showMovieHandler(wr http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Request) {
+func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
 		app.notFoundResponse(wr, r)
@@ -131,6 +131,83 @@ func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Reque
 	movie.Year = updateData.Year
 	movie.Runtime = updateData.Runtime
 	movie.Genres = updateData.Genres
+
+	// Validate the updated movie record, sending the client a 422 Unprocessable Entity
+	// response if any checks fail.
+	v := validator.New()
+	if data.ValidateMovie(v, movie); !v.Valid() {
+		app.failedValidationResponse(wr, r, v.Errors)
+
+		return
+	}
+
+	// Pass the updated movie record to our new Update() method.
+	err = app.models.Movies.Update(movie)
+	if err != nil {
+		app.serverErrorResponse(wr, r, err)
+
+		return
+	}
+
+	// Write the updated movie record in a JSON response.
+	err = app.writeJSON(wr, http.StatusOK, envelope{"movie": movie}, nil)
+	if err != nil {
+		app.serverErrorResponse(wr, r, err)
+	}
+}
+
+func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Request) {
+	id, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(wr, r)
+
+		return
+	}
+
+	movie, err := app.models.Movies.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(wr, r)
+		default:
+			app.serverErrorResponse(wr, r, err)
+		}
+
+		return
+	}
+
+	// Declare an input struct to hold the expected data from the client.
+	var updateData struct {
+		Title *string `json:"title"`
+		Year *int32 `json:"year"`
+		Runtime *data.Runtime `json:"runtime"`
+		Genres []string `json:"genres"`
+	}
+
+	// Read JSON request body data into the updateData struct
+	err = app.readJSON(wr, r, &updateData)
+	if err != nil {
+		app.badRequestResponse(wr, r, err)
+
+		return
+	}
+
+	// Map the values from the request body / updateData struct to the appropriate movie fields
+	if updateData.Title != nil {
+		movie.Title = *updateData.Title
+	}
+
+	if updateData.Year != nil {
+		movie.Year = *updateData.Year
+	}
+
+	if updateData.Runtime != nil {
+		movie.Runtime = *updateData.Runtime
+	}
+
+	if updateData.Genres != nil {
+		movie.Genres = updateData.Genres
+	}
 
 	// Validate the updated movie record, sending the client a 422 Unprocessable Entity
 	// response if any checks fail.
