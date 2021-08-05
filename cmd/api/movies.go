@@ -90,6 +90,32 @@ func (app *application) showMovieHandler(wr http.ResponseWriter, r *http.Request
 	}
 }
 
+func (app *application) listMoviesHandler(wr http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title    string
+		Genres   []string
+		data.Filters
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.Title = app.readString(qs, "title", "")
+	input.Genres = app.readCSV(qs, "genres", []string{})
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+	input.Filters.Sort = app.readString(qs, "sort", "id")
+	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+
+	if data.ValidateFilters(v, input.Filters); !v.Valid() {
+		app.failedValidationResponse(wr, r, v.Errors)
+
+		return
+	}
+
+	fmt.Fprintf(wr, "%+v\n", input)
+}
+
 func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
@@ -112,10 +138,10 @@ func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Requ
 
 	// Declare an input struct to hold the expected data from the client.
 	var updateData struct {
-		Title string `json:"title"`
-		Year int32 `json:"year"`
+		Title   string       `json:"title"`
+		Year    int32        `json:"year"`
 		Runtime data.Runtime `json:"runtime"`
-		Genres []string `json:"genres"`
+		Genres  []string     `json:"genres"`
 	}
 
 	// Read JSON request body data into the updateData struct
@@ -178,10 +204,10 @@ func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Reque
 
 	// Declare an input struct to hold the expected data from the client.
 	var updateData struct {
-		Title *string `json:"title"`
-		Year *int32 `json:"year"`
+		Title   *string       `json:"title"`
+		Year    *int32        `json:"year"`
 		Runtime *data.Runtime `json:"runtime"`
-		Genres []string `json:"genres"`
+		Genres  []string      `json:"genres"`
 	}
 
 	// Read JSON request body data into the updateData struct
@@ -248,12 +274,12 @@ func (app *application) deleteMovieHandler(wr http.ResponseWriter, r *http.Reque
 
 	err = app.models.Movies.Delete(id)
 	if err != nil {
-		switch  {
+		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(wr, r)
 		default:
 			app.serverErrorResponse(wr, r, err)
-			
+
 		}
 	}
 
