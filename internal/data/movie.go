@@ -65,7 +65,7 @@ func (m MovieModel) Insert(movie *Movie) error {
 func (m MovieModel) Get(id int64) (*Movie, error) {
 	// The PostgreSQL bigserial type that we're using for the movie ID starts
 	// auto-incrementing at 1 by default, so we know that no movies will have ID values
-	// less than that. To avoid making an unnecessary database call, we take a shortcut 
+	// less than that. To avoid making an unnecessary database call, we take a shortcut
 	// and return an ErrRecordNotFound error straight away.
 	if id < 1 {
 		return nil, ErrRecordNotFound
@@ -101,7 +101,7 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 	}
 
 	return &movie, nil
-	
+
 }
 
 func (m MovieModel) Update(movie *Movie) error {
@@ -156,14 +156,14 @@ func (m MovieModel) Delete(id int64) error {
 		return err
 	}
 
-	// Call the RowsAffected() method on the sql.Result object to get the number of rows 
+	// Call the RowsAffected() method on the sql.Result object to get the number of rows
 	// affected by the query.
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
 
-	// If no rows were affected, we know that the movies table didn't contain a record 
+	// If no rows were affected, we know that the movies table didn't contain a record
 	// with the provided ID at the moment we tried to delete it. In that case we
 	// return an ErrRecordNotFound error.
 	if rowsAffected == 0 {

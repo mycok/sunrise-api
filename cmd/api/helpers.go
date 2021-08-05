@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/mycok/sunrise-api/internal/validator"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 type envelope map[string]interface{}
 
+// The readIDParam reads the params from the request and converts it into an int
 func (app *application) readIDParam(r *http.Request) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 
@@ -23,6 +27,49 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 	}
 
 	return id, nil
+}
+
+// The readString() helper returns a string value from the query string, or the provided
+// default value if no matching key could be found.
+func (app *application) readString(qs url.Values, key, defaultValue string) string {
+	str := qs.Get(key)
+	if str == "" {
+		return defaultValue
+	}
+
+	return str
+}
+
+// The readCSV() helper reads a string value from the query string and then splits it
+// into a slice on the comma character. If no matching key could be found, it returns
+// the provided default value.
+func (app *application) readCSV(qs url.Values, key string, defaultValue []string) []string {
+	csv := qs.Get(key)
+	if csv == "" {
+		return defaultValue
+	}
+
+	return strings.Split(csv, ",")
+}
+
+// The readInt() helper reads a string value from the query string and converts it to an
+// integer before returning. If no matching key could be found it returns the provided
+// default value. If the value couldn't be converted to an integer, then we record an
+// error message in the provided Validator instance.
+func (app *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+	strValue := qs.Get(key)
+	if strValue == "" {
+		return defaultValue
+	}
+
+	intValue, err := strconv.Atoi(strValue)
+	if err != nil {
+		v.AddError(key, "must be an integer value")
+
+		return defaultValue
+	}
+
+	return intValue
 }
 
 func (app *application) writeJSON(wr http.ResponseWriter, status int, data envelope, headers http.Header) error {
