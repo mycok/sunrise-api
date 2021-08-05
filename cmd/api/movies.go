@@ -92,8 +92,8 @@ func (app *application) showMovieHandler(wr http.ResponseWriter, r *http.Request
 
 func (app *application) listMoviesHandler(wr http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Title    string
-		Genres   []string
+		Title  string
+		Genres []string
 		data.Filters
 	}
 
@@ -113,7 +113,19 @@ func (app *application) listMoviesHandler(wr http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	fmt.Fprintf(wr, "%+v\n", input)
+	movies, err := app.models.Movies.List(input.Title, input.Genres, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(wr, r, err)
+
+		return
+	}
+
+	err = app.writeJSON(wr, http.StatusOK, envelope{"movies": movies}, nil)
+	if err != nil {
+		app.serverErrorResponse(wr, r, err)
+
+		return
+	}
 }
 
 func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Request) {
