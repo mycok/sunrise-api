@@ -9,7 +9,7 @@ import (
 	"github.com/mycok/sunrise-api/internal/validator"
 )
 
-func (app *application) createMovieHandler(wr http.ResponseWriter, r *http.Request) {
+func (app *application) createMovieHandler(rw http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title   string       `json:"title"`
 		Year    int32        `json:"year"`
@@ -17,9 +17,9 @@ func (app *application) createMovieHandler(wr http.ResponseWriter, r *http.Reque
 		Genres  []string     `json:"genres"`
 	}
 
-	err := app.readJSON(wr, r, &input)
+	err := app.readJSON(rw, r, &input)
 	if err != nil {
-		app.badRequestResponse(wr, r, err)
+		app.badRequestResponse(rw, r, err)
 
 		return
 	}
@@ -33,14 +33,14 @@ func (app *application) createMovieHandler(wr http.ResponseWriter, r *http.Reque
 
 	v := validator.New()
 	if data.ValidateMovie(v, movie); !v.Valid() {
-		app.failedValidationResponse(wr, r, v.Errors)
+		app.failedValidationResponse(rw, r, v.Errors)
 
 		return
 	}
 
 	err = app.models.Movies.Insert(movie)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 
 		return
 	}
@@ -54,18 +54,18 @@ func (app *application) createMovieHandler(wr http.ResponseWriter, r *http.Reque
 
 	// Write a JSON response with a 201 Created status code, the movie data in the
 	// response body, and the Location header.
-	err = app.writeJSON(wr, http.StatusCreated, envelope{"movie": movie}, headers)
+	err = app.writeJSON(rw, http.StatusCreated, envelope{"movie": movie}, headers)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 
 		return
 	}
 }
 
-func (app *application) showMovieHandler(wr http.ResponseWriter, r *http.Request) {
+func (app *application) showMovieHandler(rw http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(wr, r)
+		app.notFoundResponse(rw, r)
 
 		return
 	}
@@ -74,23 +74,23 @@ func (app *application) showMovieHandler(wr http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(wr, r)
+			app.notFoundResponse(rw, r)
 		default:
-			app.serverErrorResponse(wr, r, err)
+			app.serverErrorResponse(rw, r, err)
 		}
 
 		return
 	}
 
-	err = app.writeJSON(wr, http.StatusOK, envelope{"movie": movie}, nil)
+	err = app.writeJSON(rw, http.StatusOK, envelope{"movie": movie}, nil)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 
 		return
 	}
 }
 
-func (app *application) listMoviesHandler(wr http.ResponseWriter, r *http.Request) {
+func (app *application) listMoviesHandler(rw http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title  string
 		Genres []string
@@ -108,30 +108,30 @@ func (app *application) listMoviesHandler(wr http.ResponseWriter, r *http.Reques
 	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
 
 	if data.ValidateFilters(v, input.Filters); !v.Valid() {
-		app.failedValidationResponse(wr, r, v.Errors)
+		app.failedValidationResponse(rw, r, v.Errors)
 
 		return
 	}
 
 	movies, metadata, err := app.models.Movies.List(input.Title, input.Genres, input.Filters)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 
 		return
 	}
 
-	err = app.writeJSON(wr, http.StatusOK, envelope{"metadata": metadata, "movies": movies}, nil)
+	err = app.writeJSON(rw, http.StatusOK, envelope{"metadata": metadata, "movies": movies}, nil)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 
 		return
 	}
 }
 
-func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Request) {
+func (app *application) replaceMovieHandler(rw http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(wr, r)
+		app.notFoundResponse(rw, r)
 
 		return
 	}
@@ -140,9 +140,9 @@ func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Requ
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(wr, r)
+			app.notFoundResponse(rw, r)
 		default:
-			app.serverErrorResponse(wr, r, err)
+			app.serverErrorResponse(rw, r, err)
 		}
 
 		return
@@ -157,9 +157,9 @@ func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Requ
 	}
 
 	// Read JSON request body data into the updateData struct
-	err = app.readJSON(wr, r, &updateData)
+	err = app.readJSON(rw, r, &updateData)
 	if err != nil {
-		app.badRequestResponse(wr, r, err)
+		app.badRequestResponse(rw, r, err)
 
 		return
 	}
@@ -174,7 +174,7 @@ func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Requ
 	// response if any checks fail.
 	v := validator.New()
 	if data.ValidateMovie(v, movie); !v.Valid() {
-		app.failedValidationResponse(wr, r, v.Errors)
+		app.failedValidationResponse(rw, r, v.Errors)
 
 		return
 	}
@@ -182,22 +182,22 @@ func (app *application) replaceMovieHandler(wr http.ResponseWriter, r *http.Requ
 	// Pass the updated movie record to our new Update() method.
 	err = app.models.Movies.Update(movie)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 
 		return
 	}
 
 	// Write the updated movie record in a JSON response.
-	err = app.writeJSON(wr, http.StatusOK, envelope{"movie": movie}, nil)
+	err = app.writeJSON(rw, http.StatusOK, envelope{"movie": movie}, nil)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 	}
 }
 
-func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Request) {
+func (app *application) updateMovieHandler(rw http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(wr, r)
+		app.notFoundResponse(rw, r)
 
 		return
 	}
@@ -206,9 +206,9 @@ func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(wr, r)
+			app.notFoundResponse(rw, r)
 		default:
-			app.serverErrorResponse(wr, r, err)
+			app.serverErrorResponse(rw, r, err)
 		}
 
 		return
@@ -223,9 +223,9 @@ func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Reque
 	}
 
 	// Read JSON request body data into the updateData struct
-	err = app.readJSON(wr, r, &updateData)
+	err = app.readJSON(rw, r, &updateData)
 	if err != nil {
-		app.badRequestResponse(wr, r, err)
+		app.badRequestResponse(rw, r, err)
 
 		return
 	}
@@ -251,7 +251,7 @@ func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Reque
 	// response if any checks fail.
 	v := validator.New()
 	if data.ValidateMovie(v, movie); !v.Valid() {
-		app.failedValidationResponse(wr, r, v.Errors)
+		app.failedValidationResponse(rw, r, v.Errors)
 
 		return
 	}
@@ -261,25 +261,25 @@ func (app *application) updateMovieHandler(wr http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
-			app.editConflictResponse(wr, r)
+			app.editConflictResponse(rw, r)
 		default:
-			app.serverErrorResponse(wr, r, err)
+			app.serverErrorResponse(rw, r, err)
 		}
 
 		return
 	}
 
 	// Write the updated movie record in a JSON response.
-	err = app.writeJSON(wr, http.StatusOK, envelope{"movie": movie}, nil)
+	err = app.writeJSON(rw, http.StatusOK, envelope{"movie": movie}, nil)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 	}
 }
 
-func (app *application) deleteMovieHandler(wr http.ResponseWriter, r *http.Request) {
+func (app *application) deleteMovieHandler(rw http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(wr, r)
+		app.notFoundResponse(rw, r)
 
 		return
 	}
@@ -288,16 +288,16 @@ func (app *application) deleteMovieHandler(wr http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(wr, r)
+			app.notFoundResponse(rw, r)
 		default:
-			app.serverErrorResponse(wr, r, err)
+			app.serverErrorResponse(rw, r, err)
 
 		}
 	}
 
-	err = app.writeJSON(wr, http.StatusOK, envelope{"message": "movie successfully deleted"}, nil)
+	err = app.writeJSON(rw, http.StatusOK, envelope{"message": "movie successfully deleted"}, nil)
 	if err != nil {
-		app.serverErrorResponse(wr, r, err)
+		app.serverErrorResponse(rw, r, err)
 
 		return
 	}
