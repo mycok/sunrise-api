@@ -72,7 +72,7 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 	return intValue
 }
 
-func (app *application) writeJSON(wr http.ResponseWriter, status int, data envelope, headers http.Header) error {
+func (app *application) writeJSON(rw http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
@@ -81,19 +81,19 @@ func (app *application) writeJSON(wr http.ResponseWriter, status int, data envel
 	js = append(js, '\n')
 
 	for key, value := range headers {
-		wr.Header()[key] = value
+		rw.Header()[key] = value
 	}
 
-	wr.Header().Set("Content-Type", "application/json")
-	wr.WriteHeader(status)
-	wr.Write(js)
+	rw.Header().Set("Content-Type", "application/json")
+	rw.WriteHeader(status)
+	rw.Write(js)
 
 	return nil
 }
 
-func (app *application) readJSON(wr http.ResponseWriter, r *http.Request, dest interface{}) error {
+func (app *application) readJSON(rw http.ResponseWriter, r *http.Request, dest interface{}) error {
 	maxBytes := 1_048_576
-	r.Body = http.MaxBytesReader(wr, r.Body, int64(maxBytes))
+	r.Body = http.MaxBytesReader(rw, r.Body, int64(maxBytes))
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
