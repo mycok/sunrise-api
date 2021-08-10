@@ -16,9 +16,9 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
-	Password  password  `json:"_"`
+	Password  password  `json:"-"`
 	Activated bool      `json:"activated"`
-	Version   int       `json:"__"`
+	Version   int       `json:"-"`
 }
 
 func ValidateEmail(v *validator.Validator, email string) {
@@ -35,6 +35,8 @@ func ValidatePassword(v *validator.Validator, password string) {
 func ValidateUser(v *validator.Validator, user *User) {
 	v.Check(user.Name != "", "name", "must be provided")
 	v.Check(len(user.Name) <= 500, "name", "must not be more than 500 bytes")
+
+	ValidateEmail(v, user.Email)
 
 	if user.Password.plainText != nil {
 		ValidatePassword(v, *user.Password.plainText)
