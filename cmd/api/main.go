@@ -9,6 +9,7 @@ import (
 
 	"github.com/mycok/sunrise-api/internal/data"
 	"github.com/mycok/sunrise-api/internal/jsonlog"
+	"github.com/mycok/sunrise-api/internal/mailer"
 
 	_ "github.com/lib/pq"
 )
@@ -30,6 +31,13 @@ type config struct {
 		burst   int
 		enabled bool
 	}
+	smtp struct {
+		host string
+		port int
+		username string
+		password string
+		sender string
+	}
 }
 
 // Define an application struct to hold the dependencies for our HTTP handlers, helpers, and middleware.
@@ -37,6 +45,7 @@ type application struct {
 	config config
 	logger *jsonlog.Logger
 	models data.Models
+	mailer mailer.Mailer
 }
 
 func openDB(cfg config) (*sql.DB, error) {
@@ -86,6 +95,12 @@ func main() {
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "b5054223ea31d2", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "967bce52ce4e76", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "no-reply@sunrise-tech.co.ug", "SMTP sender")
+
 	flag.Parse()
 
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
@@ -103,6 +118,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.New(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	err = app.serve()
