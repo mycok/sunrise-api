@@ -73,13 +73,18 @@ func (m Mailer) Send(recipient, templateFile string, data interface{}) error {
 	msg.SetBody("text/plain", plainBody.String())
 	msg.AddAlternative("text/html", htmlBody.String())
 
-	// Call the DialAndSend() method on the dialer, passing in the message to send. This // opens a connection to the SMTP server, sends the message, then closes the
+	// Add some retry basic logic using a for loop and call the DialAndSend() method 
+	// on the dialer, passing in the message to send. This // opens a connection to the SMTP server, sends the message, then closes the
 	// connection. If there is a timeout, it will return a "dial tcp: i/o timeout"
 	// error.
-	err = m.dialer.DialAndSend(msg)
-	if err != nil {
-		return err
+	for i := 0; i <= 3; i++ {
+		err = m.dialer.DialAndSend(msg)
+		if err == nil {
+			return nil
+		}
+
+		time.Sleep(500 * time.Millisecond)
 	}
 
-	return nil
+	return err
 }
