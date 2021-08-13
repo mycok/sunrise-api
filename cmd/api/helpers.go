@@ -137,3 +137,19 @@ func (app *application) readJSON(rw http.ResponseWriter, r *http.Request, dest i
 
 	return nil
 }
+
+func (app *application) background(fn func()) {
+	// Launch a background goroutine
+	go func() {
+		// Run a deferred function which uses recover() to catch any panic, and log an 
+		// error message instead of terminating the application.
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+			}
+		}()
+
+		// Call any function passed as a parameter
+		fn()
+	}()
+}
