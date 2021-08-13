@@ -59,18 +59,21 @@ func (app *application) RegisterUserHandler(rw http.ResponseWriter, r *http.Requ
 
 		return
 	}
-	// send the newly registered user a welcome email
-	err = app.mailer.Send(user.Email, "user_welcome.go.tmpl", user)
+	// Launch a go background routine that sends the newly registered user a welcome email
+	go func() {
+		err = app.mailer.Send(user.Email, "user_welcome.go.tmpl", user)
+		if err != nil {
+			// If there is an error sending the email then we use the 
+			// app.logger.PrintError() helper to manage it, instead of the
+			// app.serverErrorResponse() helper.
+			app.logger.PrintError(err, nil)
+		}
+	}()
+
+	// Send the client a 202 Accepted status code to indicate that the request has been
+	// accepted for processing but the processing has not yet been completed
+	err = app.writeJSON(rw, http.StatusAccepted, envelope{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(rw, r, err)
-
-		return
-	}
-
-	err = app.writeJSON(rw, http.StatusCreated, envelope{"user": user}, nil)
-	if err != nil {
-		app.serverErrorResponse(rw, r, err)
-
-		return
 	}
 }
