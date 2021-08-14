@@ -12,8 +12,8 @@ import (
 //go:embed "templates"
 var templateFS embed.FS
 
-// Define a Mailer struct which contains a mail.Dialer instance (used to connect to a 
-// SMTP server) and the sender information for your emails (the name and address you 
+// Mailer type contains a mail.Dialer instance (used to connect to a
+// SMTP server) and the sender information for your emails (the name and address you
 // want the email to be from, such as "Alice Smith <alice@example.com>").
 type Mailer struct {
 	dialer *mail.Dialer
@@ -32,7 +32,7 @@ func New(host string, port int, username, password, sender string) Mailer {
 	}
 }
 
-// Define a Send() method on the Mailer type. This takes the recipient email address 
+// Send() takes the recipient email address
 // as the first parameter, the name of the file containing the templates, and any
 // dynamic data for the templates as an interface{} parameter.
 func (m Mailer) Send(recipient, templateFile string, data interface{}) error {
@@ -41,7 +41,7 @@ func (m Mailer) Send(recipient, templateFile string, data interface{}) error {
 		return err
 	}
 
-	// Execute the named template "subject", passing in the dynamic data and storing the 
+	// Execute the named template "subject", passing in the dynamic data and storing the
 	// result in a bytes.Buffer variable.
 	subject := new(bytes.Buffer)
 	err = tmpl.ExecuteTemplate(subject, "subject", data)
@@ -62,9 +62,9 @@ func (m Mailer) Send(recipient, templateFile string, data interface{}) error {
 	}
 
 	// Use the mail.NewMessage() function to initialize a new mail.Message instance.
-	// Then we use the SetHeader() method to set the email recipient, sender and subject 
-	// headers, the SetBody() method to set the plain-text body, and the AddAlternative() 
-	// method to set the HTML body. It's important to note that AddAlternative() should 
+	// Then we use the SetHeader() method to set the email recipient, sender and subject
+	// headers, the SetBody() method to set the plain-text body, and the AddAlternative()
+	// method to set the HTML body. It's important to note that AddAlternative() should
 	// always be called *after* SetBody().
 	msg := mail.NewMessage()
 	msg.SetHeader("To", recipient)
@@ -73,7 +73,7 @@ func (m Mailer) Send(recipient, templateFile string, data interface{}) error {
 	msg.SetBody("text/plain", plainBody.String())
 	msg.AddAlternative("text/html", htmlBody.String())
 
-	// Add some retry basic logic using a for loop and call the DialAndSend() method 
+	// Add some retry basic logic using a for loop and call the DialAndSend() method
 	// on the dialer, passing in the message to send. This // opens a connection to the SMTP server, sends the message, then closes the
 	// connection. If there is a timeout, it will return a "dial tcp: i/o timeout"
 	// error.

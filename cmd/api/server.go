@@ -51,10 +51,10 @@ func (app *application) serve() error {
 			shutdownError <- err
 		}
 
-		// Log a message to say that we're waiting for any background goroutines to 
+		// Log a message to say that we're waiting for any background goroutines to
 		// complete their tasks.
 		app.logger.PrintInfo("completing background tasks", map[string]string{
-			"addr": srv.Addr,	
+			"addr": srv.Addr,
 		})
 
 		// Call Wait() to block until our WaitGroup counter is zero --- essentially

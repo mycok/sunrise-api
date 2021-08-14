@@ -13,20 +13,20 @@ import (
 
 const ScopeActivation = "Activation"
 
-// Define a Token struct to hold the data for an individual token.
+// Token type holds the data for an individual token.
 type Token struct {
 	PlainText string
-	Hash []byte
-	UserID int64
-	Expiry time.Time
-	Scope string
+	Hash      []byte
+	UserID    int64
+	Expiry    time.Time
+	Scope     string
 }
 
 func generateToken(userID int64, timeToLive time.Duration, scope string) (*Token, error) {
 	token := &Token{
 		UserID: userID,
 		Expiry: time.Now().Add(timeToLive),
-		Scope: scope,
+		Scope:  scope,
 	}
 
 	randomBytes := make([]byte, 16)
@@ -50,7 +50,7 @@ func generateToken(userID int64, timeToLive time.Duration, scope string) (*Token
 
 	// Generate a SHA-256 hash of the plaintext token string. This will be the value
 	// that we store in the `hash` field of our database table. Note that the
-	// sha256.Sum256() function returns an *array* of length 32, so to make it easier to 
+	// sha256.Sum256() function returns an *array* of length 32, so to make it easier to
 	// work with we convert it to a slice using the [:] operator before storing it.
 	hash := sha256.Sum256([]byte(token.PlainText))
 	token.Hash = hash[:]
@@ -59,7 +59,7 @@ func generateToken(userID int64, timeToLive time.Duration, scope string) (*Token
 
 }
 
-// Check that the plaintext token is provided and is exactly 52 bytes long
+// ValidatePlainTextToken() checks that the plaintext token is provided and is exactly 52 bytes long
 func ValidatePlainTextToken(v *validator.Validator, plainTextToken string) {
 	v.Check(plainTextToken != "", "token", "must be provided")
 	v.Check(len(plainTextToken) == 26, "token", "must be 26 bytes long")
@@ -81,21 +81,22 @@ func (m TokenModel) New(userID int64, timeToLive time.Duration, scope string) (*
 }
 
 // Insert() adds the data for a specific token to the tokens table.
-func(m TokenModel) Insert(token *Token) error {
+func (m TokenModel) Insert(token *Token) error {
 	query := `
 			INSERT INTO tokens (hash, user_id, expiry, scope)
 			VALUES ($1, $2, $3, $4)`
 
 	args := []interface{}{token.Hash, token.UserID, token.Expiry, token.Scope}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	_, err := m.DB.ExecContext(ctx, query, args...)
-	
-	return err
-}	
 
-func (m TokenModel) DeleteUserTokens(userID int64, scope string) error {
+	return err
+}
+
+func (m TokenModel) DeleteAllForUser(userID int64, scope string) error {
 	query := `
 			DELETE FROM tokens
 			WHERE user_id = $1

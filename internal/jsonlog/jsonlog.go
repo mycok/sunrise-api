@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Declare a Level type to represent the severity level for an entry log
+// Level type represents the severity level for an entry log
 type Level int8
 
 // Initialize constants to represent various severity levels
@@ -34,7 +34,7 @@ func (l Level) String() string {
 	}
 }
 
-// Declare a custom Logger type. This holds the output destination that the log entries
+// Logger type holds the output destination that the log entries
 // will be written to, the minimum severity level that log entries will be written for,
 // plus a mutex for coordinating the writes.
 type Logger struct {
@@ -43,7 +43,7 @@ type Logger struct {
 	mu       sync.Mutex
 }
 
-// Return a new Logger instance which writes log entries at or above a minimum severity
+// New() returns a new Logger instance which writes log entries at or above a minimum severity
 // level to a specific output destination.
 func New(out io.Writer, minLevel Level) *Logger {
 	return &Logger{
@@ -52,7 +52,6 @@ func New(out io.Writer, minLevel Level) *Logger {
 	}
 }
 
-// Declare some helper methods for writing log entries at the different levels.
 func (l *Logger) PrintInfo(message string, props map[string]string) {
 	l.print(LevelInfo, message, props)
 
