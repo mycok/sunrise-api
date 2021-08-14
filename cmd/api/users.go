@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/mycok/sunrise-api/internal/data"
 	"github.com/mycok/sunrise-api/internal/validator"
@@ -60,10 +61,23 @@ func (app *application) RegisterUserHandler(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	token, err := app.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(rw, r, err)
+
+		return
+	}
+
 	// Use the background helper to execute an anonymous function that sends
 	// emails by calling mailer.Send() method
 	app.background(func() {
-		err = app.mailer.Send(user.Email, "user_welcome.go.tmpl", user)
+		// We create a map to hold various pieces of data to pass to our templates
+		data := map[string]interface{}{
+			"activationToken": token.PlainText,
+			"userID": user.ID,
+		}
+
+		err = app.mailer.Send(user.Email, "user_welcome.go.tmpl", data)
 		if err != nil {
 			// If there is an error sending the email then we use the 
 			// app.logger.PrintError() helper to manage it, instead of the
