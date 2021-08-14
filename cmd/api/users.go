@@ -74,12 +74,12 @@ func (app *application) RegisterUserHandler(rw http.ResponseWriter, r *http.Requ
 		// We create a map to hold various pieces of data to pass to our templates
 		data := map[string]interface{}{
 			"activationToken": token.PlainText,
-			"userID": user.ID,
+			"userID":          user.ID,
 		}
 
 		err = app.mailer.Send(user.Email, "user_welcome.go.tmpl", data)
 		if err != nil {
-			// If there is an error sending the email then we use the 
+			// If there is an error sending the email then we use the
 			// app.logger.PrintError() helper to manage it, instead of the
 			// app.serverErrorResponse() helper.
 			app.logger.PrintError(err, nil)
@@ -89,6 +89,76 @@ func (app *application) RegisterUserHandler(rw http.ResponseWriter, r *http.Requ
 	// Send the client a 202 Accepted status code to indicate that the request has been
 	// accepted for processing but the processing has not yet been completed
 	err = app.writeJSON(rw, http.StatusAccepted, envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(rw, r, err)
+	}
+}
+
+func (app *application) activateUserHandler(rw http.ResponseWriter, r *http.Request) {
+	// Parse the plain_text token from the request
+	var input struct {
+		PlainTextToken string `json:"token"`
+	}
+
+	err := app.readJSON(rw, r, &input)
+	if err != nil {
+		app.badRequestResponse(rw, r, err)
+
+		return
+	}
+
+	// Validate the plain-text-token provided by the user
+	v := validator.New()
+
+	if data.ValidatePlainTextToken(v, input.PlainTextToken); !v.Valid() {
+		app.failedValidationResponse(rw, r, v.Errors)
+
+		return
+	}
+
+	// Retrieve the details of the user associated with the token using the
+	// GetForToken() method (which we will create in a minute). If no matching record
+	// is found, then we let the client know that the token they provided is not valid.
+	user, err := app.models.Users.GetForToken(input.PlainTextToken, data.ScopeActivation)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			v.AddError("token", "invalid or expired token")
+			app.failedValidationResponse(rw, r, v.Errors)
+		default:
+			app.serverErrorResponse(rw, r, err)
+		}
+
+		return
+	}
+
+	// update the user's activation status
+	user.Activated = true
+
+	// Save the updated user record in our database, checking for any edit conflicts in
+	// the same way that we did for our movie records
+	err = app.models.Users.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(rw, r)
+		default:
+			app.serverErrorResponse(rw, r, err)
+		}
+
+		return
+	}
+
+	// If everything went successfully, then we delete all activation tokens for the user.
+	err = app.models.Tokens.DeleteAllForUser(user.ID, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(rw, r, err)
+
+		return
+	}
+
+	// Send the updated user details to the client in a JSON response.
+	err = app.writeJSON(rw, http.StatusOK, envelope{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(rw, r, err)
 	}

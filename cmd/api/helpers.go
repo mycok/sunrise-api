@@ -145,8 +145,8 @@ func (app *application) background(fn func()) {
 	go func() {
 		// Use defer to decrement the WaitGroup counter before the goroutine returns.
 		defer app.wg.Done()
-	
-		// Run a deferred function which uses recover() to catch any panic, and log an 
+
+		// Run a deferred function which uses recover() to catch any panic, and log an
 		// error message instead of terminating the application.
 		defer func() {
 			if err := recover(); err != nil {
@@ -158,5 +158,3 @@ func (app *application) background(fn func()) {
 		fn()
 	}()
 }
-
-
