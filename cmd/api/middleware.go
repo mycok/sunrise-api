@@ -1,12 +1,16 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/mycok/sunrise-api/internal/data"
+	"github.com/mycok/sunrise-api/internal/validator"
 	"golang.org/x/time/rate"
 )
 
@@ -104,6 +108,65 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 			// Unlock the mutex before calling the next handler in the chain
 			mu.Unlock()
 		}
+
+		next.ServeHTTP(rw, r)
+	})
+}
+
+func (app *application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		// Add the "Vary: Authorization" header to the response. This indicates to any 
+		// caches that the response may vary based on the value of the Authorization 
+		// header in the request.
+		rw.Header().Add("Vary", "Authorization")
+
+		// Retrieve the value of the Authorization header from the request. This will 
+		// return the empty string "" if there is no such header found.
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			r = app.contextSetUser(r, data.AnonymousUser)
+
+			next.ServeHTTP(rw, r)
+
+			return
+		}
+
+		// Otherwise, we expect the value of the Authorization header to be in the format 
+		// "Bearer <token>". We try to split this into its constituent parts, and if the 
+		// header isn't in the expected format we return a 401 Unauthorized response
+		// using the invalidAuthenticationTokenResponse() helper.
+		headerParts := strings.Split(authHeader, " ")
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			app.invalidAuthTokenResponse(rw, r)
+
+			return
+		}
+
+		token := headerParts[1]
+
+		v := validator.New()
+		if data.ValidatePlainTextToken(v, token); !v.Valid() {
+			app.invalidAuthTokenResponse(rw, r)
+
+			return
+		}
+
+		// Retrieve the details of the user associated with the authentication token, 
+		// again calling the invalidAuthenticationTokenResponse() helper if no
+		// matching record was found.
+		user, err := app.models.Users.GetForToken(token, data.ScopeAuthentication)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.invalidAuthTokenResponse(rw, r)
+			default:
+				app.serverErrorResponse(rw, r, err)
+			}
+
+			return
+		}
+
+		r = app.contextSetUser(r, user)
 
 		next.ServeHTTP(rw, r)
 	})
