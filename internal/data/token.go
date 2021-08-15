@@ -11,15 +11,19 @@ import (
 	"github.com/mycok/sunrise-api/internal/validator"
 )
 
-const ScopeActivation = "Activation"
+const (
+	ScopeActivation = "activation"
+	ScopeAuthentication = "authentication"
+)
 
 // Token type holds the data for an individual token.
+// JSON tags control how the type fields appear when encoded into JSON
 type Token struct {
-	PlainText string
-	Hash      []byte
-	UserID    int64
-	Expiry    time.Time
-	Scope     string
+	PlainText string `json:"token"`
+	Hash      []byte `json:"-"`
+	UserID    int64 `json:"-"`
+	Expiry    time.Time `json:"expiry"`
+	Scope     string `json:"-"`
 }
 
 func generateToken(userID int64, timeToLive time.Duration, scope string) (*Token, error) {
