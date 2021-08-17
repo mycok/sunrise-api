@@ -157,6 +157,14 @@ func (app *application) activateUserHandler(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Add the "movies:read" permission for the activated user.
+	err = app.models.Permissions.AddForUser(user.ID, "movies:read")
+	if err != nil {
+		app.serverErrorResponse(rw, r, err)
+
+		return
+	}
+
 	// Send the updated user details to the client in a JSON response.
 	err = app.writeJSON(rw, http.StatusOK, envelope{"user": user}, nil)
 	if err != nil {
