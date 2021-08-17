@@ -6,6 +6,7 @@ import (
 	"expvar"
 	"flag"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -122,9 +123,6 @@ func main() {
 
 	flag.Parse()
 
-	// Add the version field to expvar debug JSON output
-	expvar.NewString("version").Set(version)
-
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
 	db, err := openDB(cfg)
@@ -135,6 +133,21 @@ func main() {
 	defer db.Close()
 
 	logger.PrintInfo("database connection pool established", nil)
+
+	// Add custom fields to expvar debug JSON output
+	expvar.NewString("version").Set(version)
+	expvar.Publish("database", expvar.Func(func() interface{} {
+		return db.Stats()
+	}))
+	expvar.Publish("goroutines", expvar.Func(func() interface{} {
+		return runtime.NumGoroutine()
+	}))
+	expvar.Publish("active_cpu's", expvar.Func(func() interface{} {
+		return runtime.NumCPU()
+	}))
+	expvar.Publish("timestamp", expvar.Func(func() interface{} {
+		return time.Now().Unix()
+	}))
 
 	app := &application{
 		config: cfg,
