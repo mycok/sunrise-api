@@ -61,7 +61,7 @@ func (app *application) rateLimitExceededResponse(rw http.ResponseWriter, r *htt
 
 func (app *application) invalidCredentialsResponse(rw http.ResponseWriter, r *http.Request) {
 	message := "invalid authentication credentials"
-	app.errResponse(rw, r, http.StatusUnauthorized ,message)
+	app.errResponse(rw, r, http.StatusUnauthorized, message)
 }
 
 func (app *application) invalidAuthTokenResponse(rw http.ResponseWriter, r *http.Request) {

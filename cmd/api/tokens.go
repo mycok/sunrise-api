@@ -11,7 +11,7 @@ import (
 
 func (app *application) createAuthenticationTokenHandler(rw http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
@@ -34,7 +34,7 @@ func (app *application) createAuthenticationTokenHandler(rw http.ResponseWriter,
 	}
 
 	// Lookup the user record based on the email address. If no matching user was
-	// found, then we call the app.invalidCredentialsResponse() helper to send a 401 
+	// found, then we call the app.invalidCredentialsResponse() helper to send a 401
 	// Unauthorized response to the client (we will create this helper in a moment).
 	user, err := app.models.Users.GetByEmail(input.Email)
 	if err != nil {
@@ -56,7 +56,7 @@ func (app *application) createAuthenticationTokenHandler(rw http.ResponseWriter,
 		return
 	}
 
-	// If the passwords don't match, then we call the app.invalidCredentialsResponse() 
+	// If the passwords don't match, then we call the app.invalidCredentialsResponse()
 	// helper again and return.
 	if !match {
 		app.invalidCredentialsResponse(rw, r)

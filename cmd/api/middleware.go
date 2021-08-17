@@ -115,12 +115,12 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		// Add the "Vary: Authorization" header to the response. This indicates to any 
-		// caches that the response may vary based on the value of the Authorization 
+		// Add the "Vary: Authorization" header to the response. This indicates to any
+		// caches that the response may vary based on the value of the Authorization
 		// header in the request.
 		rw.Header().Add("Vary", "Authorization")
 
-		// Retrieve the value of the Authorization header from the request. This will 
+		// Retrieve the value of the Authorization header from the request. This will
 		// return the empty string "" if there is no such header found.
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -131,8 +131,8 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// Otherwise, we expect the value of the Authorization header to be in the format 
-		// "Bearer <token>". We try to split this into its constituent parts, and if the 
+		// Otherwise, we expect the value of the Authorization header to be in the format
+		// "Bearer <token>". We try to split this into its constituent parts, and if the
 		// header isn't in the expected format we return a 401 Unauthorized response
 		// using the invalidAuthenticationTokenResponse() helper.
 		headerParts := strings.Split(authHeader, " ")
@@ -151,7 +151,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// Retrieve the details of the user associated with the authentication token, 
+		// Retrieve the details of the user associated with the authentication token,
 		// again calling the invalidAuthenticationTokenResponse() helper if no
 		// matching record was found.
 		user, err := app.models.Users.GetForToken(token, data.ScopeAuthentication)
@@ -185,6 +185,7 @@ func (app *application) requiresAuthentication(next http.HandlerFunc) http.Handl
 		next.ServeHTTP(rw, r)
 	})
 }
+
 // requiresActivatedUser() checks that the user is both authenticated and activated
 func (app *application) requiresActivatedUser(next http.HandlerFunc) http.HandlerFunc {
 	fn := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
@@ -203,7 +204,7 @@ func (app *application) requiresActivatedUser(next http.HandlerFunc) http.Handle
 }
 
 func (app *application) requiresPermission(code string, next http.HandlerFunc) http.HandlerFunc {
-	fn := func(rw http.ResponseWriter, r *http.Request)  {
+	fn := func(rw http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
 
 		// Get the slice of permissions for the user.
@@ -214,7 +215,7 @@ func (app *application) requiresPermission(code string, next http.HandlerFunc) h
 			return
 		}
 
-		// Check if the slice includes the required permission. If it doesn't, then 
+		// Check if the slice includes the required permission. If it doesn't, then
 		// return a 403 Forbidden response.
 		if !permissions.Include(code) {
 			app.notPermittedResponse(rw, r)

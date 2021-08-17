@@ -12,18 +12,18 @@ import (
 )
 
 const (
-	ScopeActivation = "activation"
+	ScopeActivation     = "activation"
 	ScopeAuthentication = "authentication"
 )
 
 // Token type holds the data for an individual token.
 // JSON tags control how the type fields appear when encoded into JSON
 type Token struct {
-	PlainText string `json:"token"`
-	Hash      []byte `json:"-"`
-	UserID    int64 `json:"-"`
+	PlainText string    `json:"token"`
+	Hash      []byte    `json:"-"`
+	UserID    int64     `json:"-"`
 	Expiry    time.Time `json:"expiry"`
-	Scope     string `json:"-"`
+	Scope     string    `json:"-"`
 }
 
 func generateToken(userID int64, timeToLive time.Duration, scope string) (*Token, error) {
