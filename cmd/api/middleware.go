@@ -172,14 +172,23 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) requiresActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+func (app *application) requiresAuthentication(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
+
 		if user.IsAnonymous() {
 			app.authenticationRequiredResponse(rw, r)
 
 			return
 		}
+
+		next.ServeHTTP(rw, r)
+	})
+}
+// requiresActivatedUser() checks that the user is both authenticated and activated
+func (app *application) requiresActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
 
 		if !user.Activated {
 			app.inactiveAccountResponse(rw, r)
@@ -189,4 +198,32 @@ func (app *application) requiresActivatedUser(next http.HandlerFunc) http.Handle
 
 		next.ServeHTTP(rw, r)
 	})
+
+	return app.requiresAuthentication(fn)
+}
+
+func (app *application) requiresPermission(code string, next http.HandlerFunc) http.HandlerFunc {
+	fn := func(rw http.ResponseWriter, r *http.Request)  {
+		user := app.contextGetUser(r)
+
+		// Get the slice of permissions for the user.
+		permissions, err := app.models.Permissions.GetAllForUser(user.ID)
+		if err != nil {
+			app.serverErrorResponse(rw, r, err)
+
+			return
+		}
+
+		// Check if the slice includes the required permission. If it doesn't, then 
+		// return a 403 Forbidden response.
+		if !permissions.Include(code) {
+			app.notPermittedResponse(rw, r)
+
+			return
+		}
+
+		next.ServeHTTP(rw, r)
+	}
+
+	return app.requiresActivatedUser(fn)
 }
