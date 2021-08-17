@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"os"
 	"strings"
@@ -120,6 +121,9 @@ func main() {
 	})
 
 	flag.Parse()
+
+	// Add the version field to expvar debug JSON output
+	expvar.NewString("version").Set(version)
 
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
