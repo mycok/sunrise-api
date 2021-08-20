@@ -8,5 +8,6 @@ require (
 	github.com/lib/pq v1.10.0
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
+	golang.org/x/tools v0.1.5 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
