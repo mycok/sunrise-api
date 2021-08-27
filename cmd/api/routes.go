@@ -31,5 +31,5 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/debug/metrics", app.requiresPermission("metrics:view", expvar.Handler().ServeHTTP))
 
-	return app.recoverFromPanic(app.enableCORS(app.rateLimit(app.authenticate(router))))
+	return app.metrics(app.recoverFromPanic(app.enableCORS(app.rateLimit(app.authenticate(router)))))
 }
