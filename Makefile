@@ -45,6 +45,11 @@ vet: lint
 .PHONY: format
 format: vet
 
+.PHONY: vendor
+vendor: audit
+	@echo '.....Vendoring app dependencies.....'
+	go mod vendor
+
 # ======================================================================== #
 # DEVELOPMENT
 # ======================================================================== #
