@@ -281,15 +281,15 @@ func (app *application) metrics(next http.Handler) http.Handler {
 		// Call the next handler in the chain.
 		next.ServeHTTP(rw, r)
 
-		// On the way back up the middleware chain, increment the number of responses 
+		// On the way back up the middleware chain, increment the number of responses
 		// sent by 1.
 		totalResponsesSent.Add(1)
 
-		// Calculate the number of microseconds since we began to process the request, 
+		// Calculate the number of microseconds since we began to process the request,
 		// then increment the total processing time by this amount.
-		// Calculate the number of microseconds since we began to process the request, 
+		// Calculate the number of microseconds since we began to process the request,
 		// then increment the total processing time by this amount.
-		duration := time.Now().Sub(start).Milliseconds()
+		duration := time.Since(start).Milliseconds()
 		totalProcessingInMs.Add(duration)
 	})
 }
